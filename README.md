@@ -1,4 +1,4 @@
-​	该库是基于riscv-v-spec-1.0草稿移植的ComputeLibrary。
+​	该库是基于riscv-v-spec-0.9移植的ComputeLibrary。
 
 ​	移植的内在函数放于vector_transplant.h，主要考虑了移植的方向，牺牲了一些性能。
 
