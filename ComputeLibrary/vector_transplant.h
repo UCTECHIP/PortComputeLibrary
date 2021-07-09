@@ -570,9 +570,11 @@ vst1q_lane_s32 (int32_t *__a, int32x4_t __b, const int __lane)
   int number = 1;
   vsetvl_e32m1 (number);
   if (0 <= __lane && __lane <= 3){
-    __b[0] = __b[__lane];
-  vint32m1_t vb = vle32_v_i32m1(&__b[0]);
-    vse32_v_i32m1(&__a[0],vb);
+//    __b[0] = __b[__lane];
+//  vint32m1_t vb = vle32_v_i32m1(&__b[0]);
+//    vse32_v_i32m1(&__a[0],vb);
+// @yexc
+   *__a = __b[__lane];
   }
 }
 
@@ -2078,9 +2080,10 @@ __extension__ static __inline float32x2_t __attribute__ ((__always_inline__))
 vdup_n_f32 (float32_t __a)
 {
   int number = 2;
-  vsetvl_e32m1 (number);
+  vsetvl_e32m1 (4);
   vfloat32m1_t vb;
   vb = vfmv_v_f_f32m1(__a);
+  vsetvl_e32m1 (number);
   float32x2_t b;
   vse32_v_f32m1(&b[0],vb);
   return b;
@@ -2409,7 +2412,7 @@ vcvt_s32_f32 (float32x2_t __a)
   int number = 2;
   vsetvl_e32m1 (number);
   vfloat32m1_t va = vle32_v_f32m1(&__a[0]);
-  asm("fsrmi  zero, 2\n");
+  asm("fsrmi  zero, 1\n");
   vint32m1_t vb = vfcvt_x_f_v_i32m1(va);
   asm("fsrmi  zero, 0\n");
   int32x2_t b;
@@ -2422,14 +2425,25 @@ vcvtq_s32_f32 (float32x4_t __a)
 {
   int number = 4;
   vsetvl_e32m1 (number);
+  volatile int test[4]= {0};//In order to be the same as arm
+  asm(
+    "li a0, 4\n"
+    "vsetvli    a0,a0,e32,m1\n"
+    "vle32.v    v0,(%0)\n"
+    "vse32.v    v0,(%1)\n"
+    :    
+    :"r"(&__a[0]), "r"(test)
+    :"a0"
+  );
+  for(int i=0;i<4;i++){
+    if(0x7fc00000 == (test[i] & 0x7fc00000))
+      __a[i] = 0; 
+  }
+
   vfloat32m1_t va = vle32_v_f32m1(&__a[0]);
-asm(
-  "fsrmi   zero,2\n"
-);
+asm("fsrmi   zero,1\n");
   vint32m1_t vc = vfcvt_x_f_v_i32m1(va);
-asm(
-  "fsrmi   zero,0\n"
-);
+asm("fsrmi   zero,0\n");
   int32x4_t c;
   vse32_v_i32m1(&c[0],vc);
   return c;
@@ -2441,13 +2455,9 @@ vcvtq_f32_s32 (int32x4_t __a)
   int number = 4;
   vsetvl_e32m1 (number);
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
-asm(
-  "fsrmi   zero,2\n"
-);
+//asm("fsrmi   zero,2\n");
   vfloat32m1_t vc = vfcvt_f_x_v_f32m1(va);
-asm(
-  "fsrmi   zero,0\n"
-);
+//asm("fsrmi   zero,0\n");
   float32x4_t c;
   vse32_v_f32m1(&c[0],vc);
   return c;
@@ -2458,14 +2468,25 @@ vcvtq_u32_f32 (float32x4_t __a)
 {
   int number = 4;
   vsetvl_e32m1 (number);
+  volatile uint32_t test[4]= {0};//In order to be the same as arm
+  asm(
+    "li a0, 4\n"
+    "vsetvli    a0,a0,e32,m1\n"
+    "vle32.v    v0,(%0)\n"
+    "vse32.v    v0,(%1)\n"
+    :
+    :"r"(&__a[0]), "r"(test)
+    :"a0"
+  );
+  for(int i=0;i<4;i++){
+    if(0x7fc00000 == (test[i] & 0x7fc00000))
+      __a[i] = 0;
+  }
+
   vfloat32m1_t va = vle32_v_f32m1(&__a[0]);
-asm(
-  "fsrmi   zero,2\n"
-);
+asm("fsrmi   zero,1\n");
   vuint32m1_t vc = vfcvt_xu_f_v_u32m1(va);
-asm(
-  "fsrmi   zero,0\n"
-);
+asm("fsrmi   zero,0\n");
   uint32x4_t c;
   vse32_v_u32m1(&c[0],vc);
   return c;
@@ -2477,13 +2498,9 @@ vcvtq_f32_u32 (uint32x4_t __a)
   int number = 4;
   vsetvl_e32m1 (number);
   vuint32m1_t va = vle32_v_u32m1(&__a[0]);
-asm(
-  "fsrmi   zero,2\n"
-);
+//asm("fsrmi   zero,2\n");
   vfloat32m1_t vc = vfcvt_f_xu_v_f32m1(va);
-asm(
-  "fsrmi   zero,0\n"
-);
+//asm("fsrmi   zero,0\n");
   float32x4_t c;
   vse32_v_f32m1(&c[0],vc);
   return c;
@@ -2876,7 +2893,7 @@ vshlq_s16 (int16x8_t __a, int16x8_t __b)
   vsetvl_e16m1 (number);
   vint16m1_t va = vle16_v_i16m1(&__a[0]);
   vint16m1_t vb = vle16_v_i16m1(&__b[0]);
-  vint16m1_t c,d;
+  volatile vint16m1_t c,d;
   c = vmax_vx_i16m1(vb,0);
   d = vmin_vx_i16m1(vb,0);
   d = vxor_vx_i16m1(d,-1);
@@ -2895,7 +2912,7 @@ vshlq_s32 (int32x4_t __a, int32x4_t __b)
   vsetvl_e32m1 (number);
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   vint32m1_t vb = vle32_v_i32m1(&__b[0]);
-  vint32m1_t c,d;
+  volatile vint32m1_t c,d;
   c = vmax_vx_i32m1(vb,0);
   d = vmin_vx_i32m1(vb,0);
   d = vxor_vx_i32m1(d,-1);
@@ -2914,7 +2931,7 @@ vshlq_u16 (uint16x8_t __a, int16x8_t __b)
   vsetvl_e16m1 (number);
   vuint16m1_t va = vle16_v_u16m1(&__a[0]);
   vint16m1_t vb = vle16_v_i16m1(&__b[0]);
-  vint16m1_t c,d;
+  volatile vint16m1_t c,d;
   c = vmax_vx_i16m1(vb,0);
   d = vmin_vx_i16m1(vb,0);
   d = vxor_vx_i16m1(d,-1);
@@ -2933,7 +2950,7 @@ vshlq_u32 (uint32x4_t __a, int32x4_t __b)
   vsetvl_e32m1 (number);
   vuint32m1_t va = vle32_v_u32m1(&__a[0]);
   vint32m1_t vb = vle32_v_i32m1(&__b[0]);
-  vint32m1_t c,d;
+  volatile vint32m1_t c,d;
   c = vmax_vx_i32m1(vb,0);
   d = vmin_vx_i32m1(vb,0);
   d = vxor_vx_i32m1(d,-1);
@@ -2952,7 +2969,7 @@ vqshlq_s16 (int16x8_t __a, int16x8_t __b)
   vsetvl_e16m1 (number);
   vint16m1_t va = vle16_v_i16m1(&__a[0]);
   vint16m1_t vb = vle16_v_i16m1(&__b[0]);
-  vint16m1_t c,d;
+  volatile vint16m1_t c,d;
   c = vmax_vx_i16m1(vb,0);
   d = vmin_vx_i16m1(vb,0);
   d = vxor_vx_i16m1(d,-1);
@@ -2975,7 +2992,7 @@ vqshlq_s32 (int32x4_t __a, int32x4_t __b)
   vsetvl_e32m1 (number);
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   vint32m1_t vb = vle32_v_i32m1(&__b[0]);
-  vint32m1_t c,d;
+  volatile vint32m1_t c,d;
   c = vmax_vx_i32m1(vb,0);
   d = vmin_vx_i32m1(vb,0);
   d = vxor_vx_i32m1(d,-1);
@@ -2998,7 +3015,7 @@ vqshlq_u16 (uint16x8_t __a, int16x8_t __b)
   vsetvl_e16m1 (number);
   vuint16m1_t va = vle16_v_u16m1(&__a[0]);
   vint16m1_t vb = vle16_v_i16m1(&__b[0]);
-  vint16m1_t c,d;
+  volatile vint16m1_t c,d;
   c = vmax_vx_i16m1(vb,0);
   d = vmin_vx_i16m1(vb,0);
   d = vxor_vx_i16m1(d,-1);
@@ -3021,7 +3038,7 @@ vqrshlq_s32 (int32x4_t __a, int32x4_t __b)
   vsetvl_e32m1 (number);
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   vint32m1_t vb = vle32_v_i32m1(&__b[0]);
-  vint32m1_t c,d;
+  volatile vint32m1_t c,d;
   c = vmax_vx_i32m1(vb,0);
   d = vmin_vx_i32m1(vb,0);
   d = vxor_vx_i32m1(d,-1);
@@ -3043,7 +3060,9 @@ vqshlq_n_s32 (int32x4_t __a, const int __b)
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   vint64m2_t c = vwmul_vx_i64m2(va,1);
   vint64m2_t d = vsll_vx_i64m2(c,(unsigned long)__b);
+  vwrite_csr(RVV_VXRM, 0x02);
   vint32m1_t ve = vnclip_wx_i32m1(d,0);
+  vwrite_csr(RVV_VXRM, 0x00);
   int32x4_t e;
   vse32_v_i32m1(&e[0],ve);
   return e;
@@ -3054,7 +3073,7 @@ vrshl_s32 (int32x2_t __a, int32x2_t __b)
 {
   int number = 2;
   vsetvl_e32m1 (number);
-  vint32m1_t c,d;
+  volatile vint32m1_t c,d;
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   vint32m1_t vb = vle32_v_i32m1(&__b[0]);
   c = vmax_vx_i32m1(vb,0);
@@ -3075,7 +3094,7 @@ vrshlq_s32 (int32x4_t __a, int32x4_t __b)
   vsetvl_e32m1 (number);
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   vint32m1_t vb = vle32_v_i32m1(&__b[0]);
-  vint32m1_t c,d;
+  volatile vint32m1_t c,d;
   c = vmax_vx_i32m1(vb,0);
   d = vmin_vx_i32m1(vb,0);
   d = vxor_vx_i32m1(d,-1);
@@ -3205,7 +3224,9 @@ vqshrun_n_s16 (int16x8_t __a, const int __b)
   vsetvl_e16m1 (number);
   vint16m2_t va = vle16_v_i16m2(&__a[0]);
   vint16m2_t vb = vmax_vx_i16m2(va,0);
+  vwrite_csr(RVV_VXRM, 0x02);
   vuint8m1_t vc = vnclipu_wx_u8m1((vuint16m2_t)vb,(unsigned char)__b);
+  vwrite_csr(RVV_VXRM, 0x00);
   uint8x8_t c;
   vse8_v_u8m1(&c[0],vc);
   return c;
@@ -3217,7 +3238,9 @@ vqshrn_n_u16 (uint16x8_t __a, const int __b)
   int number = 8;
   vsetvl_e16m2 (number);
   vuint16m2_t va = vle16_v_u16m2(&__a[0]);
+  vwrite_csr(RVV_VXRM, 0x02);
   vuint8m1_t vc = vnclipu_wx_u8m1(va,(unsigned char)__b);
+  vwrite_csr(RVV_VXRM, 0x00);
   uint8x8_t c;
   vse8_v_u8m1(&c[0],vc);
   return c;
@@ -4067,7 +4090,9 @@ vqmovn_s16 (int16x8_t __a)
   int number = 8;
   vsetvl_e16m2 (number);
   vint16m2_t va = vle16_v_i16m2(&__a[0]);
+  vwrite_csr(RVV_VXRM, 0x02);
   vint8m1_t vb = vnclip_wx_i8m1(va,0);
+  vwrite_csr(RVV_VXRM, 0x00);
   int8x8_t b;
   vse8_v_i8m1(&b[0],vb);
   return b;
@@ -4079,7 +4104,9 @@ vqmovn_s32 (int32x4_t __a)
   int number = 4;
   vsetvl_e32m2 (number);
   vint32m2_t va = vle32_v_i32m2(&__a[0]);
+  vwrite_csr(RVV_VXRM, 0x02);
   vint16m1_t vb = vnclip_wx_i16m1(va,0);
+  vwrite_csr(RVV_VXRM, 0x00);
   int16x4_t b;
   vse16_v_i16m1(&b[0],vb);
   return b;
@@ -4091,7 +4118,9 @@ vqmovn_s64 (int64x2_t __a)
   int number = 2;
   vsetvl_e64m2 (number);
   vint64m2_t va = vle64_v_i64m2(&__a[0]);
+  vwrite_csr(RVV_VXRM, 0x02);
   vint32m1_t vb = vnclip_wx_i32m1(va,0);
+  vwrite_csr(RVV_VXRM, 0x00);
   int32x2_t b;
   vse32_v_i32m1(&b[0],vb);
   return b;
@@ -4103,7 +4132,9 @@ vqmovn_u16 (uint16x8_t __a)
   int number = 8;
   vsetvl_e16m2 (number);
   vuint16m2_t va = vle16_v_u16m2(&__a[0]);
+  vwrite_csr(RVV_VXRM, 0x02);
   vuint8m1_t vb = vnclipu_wx_u8m1(va,0);
+  vwrite_csr(RVV_VXRM, 0x00);
   uint8x8_t b;
   vse8_v_u8m1(&b[0],vb);
   return b;
@@ -4115,7 +4146,9 @@ vqmovn_u32 (uint32x4_t __a)
   int number = 4;
   vsetvl_e32m2 (number);
   vuint32m2_t va = vle32_v_u32m2(&__a[0]);
+  vwrite_csr(RVV_VXRM, 0x02);
   vuint16m1_t vb = vnclipu_wx_u16m1(va,0);
+  vwrite_csr(RVV_VXRM, 0x00);
   uint16x4_t b;
   vse16_v_u16m1(&b[0],vb);
   return b;
@@ -4127,7 +4160,9 @@ vqmovn_u64 (uint64x2_t __a)
   int number = 2;
   vsetvl_e64m2 (number);
   vuint64m2_t va = vle64_v_u64m2(&__a[0]);
+  vwrite_csr(RVV_VXRM, 0x02);
   vuint32m1_t vb = vnclipu_wx_u32m1(va,0);
+  vwrite_csr(RVV_VXRM, 0x00);
   uint32x2_t b;
   vse32_v_u32m1(&b[0],vb);
   return b;
@@ -4367,9 +4402,9 @@ vmaxvq_f32 (float32x4_t __a)
   int number = 4;
   vsetvl_e32m1 (number);
   vfloat32m1_t va = vle32_v_f32m1(&__a[0]);
-  vfloat32m1_t b = vzero_f32m1();
+  volatile vfloat32m1_t b = vzero_f32m1();
   b = vfmv_s_f_f32m1(b, -3.4E+38);
-  vfloat32m1_t vc = vzero_f32m1();
+  volatile vfloat32m1_t vc = vzero_f32m1();
   vc = vfredmax_vs_f32m1_f32m1(vc,va,b);
   float32x4_t c;
   vse32_v_f32m1(&c[0],vc);
@@ -4548,8 +4583,9 @@ vqrdmulh_n_s32 (int32x2_t __a, int32_t __b)
   vsetvl_e32m1 (number);
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   uint32_t n = 32;
-  vint64m2_t vb = vwmul_vx_i64m2(va,2*__b);
-  vint32m1_t vc = vnclip_wx_i32m1(vb,n);
+  vint64m2_t vb = vwmul_vx_i64m2(va,__b);
+  vint64m2_t ve = vmul_vx_i64m2(vb,2);
+  vint32m1_t vc = vnclip_wx_i32m1(ve,n);
   int32x2_t c;
   vse32_v_i32m1(&c[0],vc);
   return c;
@@ -4562,8 +4598,9 @@ vqrdmulhq_n_s32 (int32x4_t __a, int32_t __b)
   vsetvl_e32m1 (number);
   uint32_t n = 32;
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
-  vint64m2_t vc = vwmul_vx_i64m2(va,2*__b);
-  vint32m1_t vd = vnclip_wx_i32m1(vc,n);
+  vint64m2_t vc = vwmul_vx_i64m2(va,__b);
+  vint64m2_t ve = vmul_vx_i64m2(vc,2);
+  vint32m1_t vd = vnclip_wx_i32m1(ve,n);
   int32x4_t d;
   vse32_v_i32m1(&d[0],vd);
   return d;
@@ -4577,8 +4614,9 @@ vqrdmulhq_s32 (int32x4_t __a, int32x4_t __b)
   uint32_t n = 32;
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   vint32m1_t vb = vle32_v_i32m1(&__b[0]);
-  vint64m2_t vc = vwmul_vv_i64m2(va,2*vb);
-  vint32m1_t vd = vnclip_wx_i32m1(vc,n);
+  vint64m2_t vc = vwmul_vv_i64m2(va,vb);
+  vint64m2_t ve = vmul_vx_i64m2(vc,2);
+  vint32m1_t vd = vnclip_wx_i32m1(ve,n);
   int32x4_t d;
   vse32_v_i32m1(&d[0],vd);
   return d;
@@ -6843,7 +6881,7 @@ vbsl_s8 (uint8x8_t __a, int8x8_t __b, int8x8_t __c)
   int number = 8;
   vsetvl_e8m1 (number);
   vuint8m1_t va;
-  vint8m1_t vb,vc,vd;
+  volatile vint8m1_t vb,vc,vd;
   va = vle8_v_u8m1(&__a[0]);
   vb = vle8_v_i8m1(&__b[0]);
   vc = vle8_v_i8m1(&__c[0]);
@@ -6861,7 +6899,7 @@ vbsl_s16 (uint16x4_t __a, int16x4_t __b, int16x4_t __c)
   int number = 4;
   vsetvl_e16m1 (number);
   vuint16m1_t va;
-  vint16m1_t vb,vc,vd;
+  volatile vint16m1_t vb,vc,vd;
   va = vle16_v_u16m1(&__a[0]);
   vb = vle16_v_i16m1(&__b[0]);
   vc = vle16_v_i16m1(&__c[0]);
@@ -6879,7 +6917,7 @@ vbsl_s32 (uint32x2_t __a, int32x2_t __b, int32x2_t __c)
   int number = 2;
   vsetvl_e32m1 (number);
   vuint32m1_t va;
-  vint32m1_t vb,vc,vd;
+  volatile vint32m1_t vb,vc,vd;
   va = vle32_v_u32m1(&__a[0]);
   vb = vle32_v_i32m1(&__b[0]);
   vc = vle32_v_i32m1(&__c[0]);
@@ -6896,7 +6934,7 @@ vbsl_u8 (uint8x8_t __a, uint8x8_t __b, uint8x8_t __c)
 {
   int number = 8;
   vsetvl_e8m1 (number);
-  vuint8m1_t va,vb,vc,vd;
+  volatile vuint8m1_t va,vb,vc,vd;
   va = vle8_v_u8m1(&__a[0]);
   vb = vle8_v_u8m1(&__b[0]);
   vc = vle8_v_u8m1(&__c[0]);
@@ -6913,7 +6951,7 @@ vbsl_u16 (uint16x4_t __a, uint16x4_t __b, uint16x4_t __c)
 {
   int number = 4;
   vsetvl_e16m1 (number);
-  vuint16m1_t va,vb,vc,vd;
+  volatile vuint16m1_t va,vb,vc,vd;
   va = vle16_v_u16m1(&__a[0]);
   vb = vle16_v_u16m1(&__b[0]);
   vc = vle16_v_u16m1(&__c[0]);
@@ -6930,7 +6968,7 @@ vbsl_u32 (uint32x2_t __a, uint32x2_t __b, uint32x2_t __c)
 {
   int number = 2;
   vsetvl_e32m1 (number);
-  vuint32m1_t va,vb,vc,vd;
+  volatile vuint32m1_t va,vb,vc,vd;
   va = vle32_v_u32m1(&__a[0]);
   vb = vle32_v_u32m1(&__b[0]);
   vc = vle32_v_u32m1(&__c[0]);
@@ -6966,8 +7004,8 @@ vbslq_s8 (uint8x16_t __a, int8x16_t __b, int8x16_t __c)
   int number = 16;
   vsetvl_e8m1 (number);
   vuint8m1_t va = vle8_v_u8m1(&__a[0]);
-  vint8m1_t vb = vle8_v_i8m1(&__b[0]);
-  vint8m1_t vc = vle8_v_i8m1(&__c[0]);
+  volatile vint8m1_t vb = vle8_v_i8m1(&__b[0]);
+  volatile vint8m1_t vc = vle8_v_i8m1(&__c[0]);
   vb = vand_vv_i8m1((vint8m1_t)va,vb);
   vc = vand_vv_i8m1(vnot_v_i8m1((vint8m1_t)va),vc);
   vint8m1_t vd = vor_vv_i8m1(vb,vc);
@@ -6982,8 +7020,8 @@ vbslq_s16 (uint16x8_t __a, int16x8_t __b, int16x8_t __c)
   int number = 8;
   vsetvl_e16m1 (number);
   vuint16m1_t va = vle16_v_u16m1(&__a[0]);
-  vint16m1_t vb = vle16_v_i16m1(&__b[0]);
-  vint16m1_t vc = vle16_v_i16m1(&__c[0]);
+  volatile vint16m1_t vb = vle16_v_i16m1(&__b[0]);
+  volatile vint16m1_t vc = vle16_v_i16m1(&__c[0]);
   vb = vand_vv_i16m1((vint16m1_t)va,vb);
   vc = vand_vv_i16m1(vnot_v_i16m1((vint16m1_t)va),vc);
   vint16m1_t vd = vor_vv_i16m1(vb,vc);
@@ -6998,8 +7036,8 @@ vbslq_s32 (uint32x4_t __a, int32x4_t __b, int32x4_t __c)
   int number = 4;
   vsetvl_e32m1 (number);
   vuint32m1_t va = vle32_v_u32m1(&__a[0]);
-  vint32m1_t vb = vle32_v_i32m1(&__b[0]);
-  vint32m1_t vc = vle32_v_i32m1(&__c[0]);
+  volatile vint32m1_t vb = vle32_v_i32m1(&__b[0]);
+  volatile vint32m1_t vc = vle32_v_i32m1(&__c[0]);
   vb = vand_vv_i32m1((vint32m1_t)va,vb);
   vc = vand_vv_i32m1(vnot_v_i32m1((vint32m1_t)va),vc);
   vint32m1_t vd = vor_vv_i32m1(vb,vc);
@@ -7014,8 +7052,8 @@ vbslq_u8 (uint8x16_t __a, uint8x16_t __b, uint8x16_t __c)
   int number = 16;
   vsetvl_e8m1 (number);
   vuint8m1_t va = vle8_v_u8m1(&__a[0]);
-  vuint8m1_t vb = vle8_v_u8m1(&__b[0]);
-  vuint8m1_t vc = vle8_v_u8m1(&__c[0]);
+  volatile vuint8m1_t vb = vle8_v_u8m1(&__b[0]);
+  volatile vuint8m1_t vc = vle8_v_u8m1(&__c[0]);
   vb = vand_vv_u8m1(va,vb);
   vc = vand_vv_u8m1(vnot_v_u8m1(va),vc);
   vuint8m1_t vd = vor_vv_u8m1(vb,vc);
@@ -7030,8 +7068,8 @@ vbslq_u16 (uint16x8_t __a, uint16x8_t __b, uint16x8_t __c)
   int number = 8;
   vsetvl_e16m1 (number);
   vuint16m1_t va = vle16_v_u16m1(&__a[0]);
-  vuint16m1_t vb = vle16_v_u16m1(&__b[0]);
-  vuint16m1_t vc = vle16_v_u16m1(&__c[0]);
+  volatile vuint16m1_t vb = vle16_v_u16m1(&__b[0]);
+  volatile vuint16m1_t vc = vle16_v_u16m1(&__c[0]);
   vb = vand_vv_u16m1(va,vb);
   vc = vand_vv_u16m1(vnot_v_u16m1(va),vc);
   vuint16m1_t vd = vor_vv_u16m1(vb,vc);
@@ -7046,8 +7084,8 @@ vbslq_u32 (uint32x4_t __a, uint32x4_t __b, uint32x4_t __c)
   int number = 4;
   vsetvl_e32m1 (number);
   vuint32m1_t va = vle32_v_u32m1(&__a[0]);
-  vuint32m1_t vb = vle32_v_u32m1(&__b[0]);
-  vuint32m1_t vc = vle32_v_u32m1(&__c[0]);
+  volatile vuint32m1_t vb = vle32_v_u32m1(&__b[0]);
+  volatile vuint32m1_t vc = vle32_v_u32m1(&__c[0]);
   vb = vand_vv_u32m1(va,vb);
   vc = vand_vv_u32m1(vnot_v_u32m1(va),vc);
   vuint32m1_t vd = vor_vv_u32m1(vb,vc);
@@ -8041,7 +8079,7 @@ vaddv_s8 (int8x8_t __a)
   vsetvl_e8m1 (number);
   vint8m1_t va = vle8_v_i8m1(&__a[0]);
   vint8m1_t vb = vzero_i8m1();
-  vint8m1_t vc = vzero_i8m1();
+  volatile vint8m1_t vc = vzero_i8m1();
   vc = vredsum_vs_i8m1_i8m1(vc,va,vb);
   int8x8_t c;
   vse8_v_i8m1(&c[0],vc);
@@ -8055,7 +8093,7 @@ vaddv_s16 (int16x4_t __a)
   vsetvl_e16m1 (number);
   vint16m1_t va = vle16_v_i16m1(&__a[0]);
   vint16m1_t vb = vzero_i16m1();
-  vint16m1_t vc = vzero_i16m1();
+  volatile vint16m1_t vc = vzero_i16m1();
   vc = vredsum_vs_i16m1_i16m1(vc,va,vb);
   int16x4_t c;
   vse16_v_i16m1(&c[0],vc);
@@ -8069,7 +8107,7 @@ vaddv_s32 (int32x2_t __a)
   vsetvl_e32m1 (number);
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   vint32m1_t vb = vzero_i32m1();
-  vint32m1_t vc = vzero_i32m1();
+  volatile vint32m1_t vc = vzero_i32m1();
   vc = vredsum_vs_i32m1_i32m1(vc,va,vb);
   int32x2_t c;
   vse32_v_i32m1(&c[0],vc);
@@ -8083,7 +8121,7 @@ vaddv_u8 (uint8x8_t __a)
   vsetvl_e8m1 (number);
   vuint8m1_t va = vle8_v_u8m1(&__a[0]);
   vuint8m1_t vb = vzero_u8m1();
-  vuint8m1_t vc = vzero_u8m1();
+  volatile vuint8m1_t vc = vzero_u8m1();
   vc = vredsum_vs_u8m1_u8m1(vc,va,vb);
   uint8x8_t c;
   vse8_v_u8m1(&c[0],vc);
@@ -8097,7 +8135,7 @@ vaddv_u16 (uint16x4_t __a)
   vsetvl_e16m1 (number);
   vuint16m1_t va = vle16_v_u16m1(&__a[0]);
   vuint16m1_t vb = vzero_u16m1();
-  vuint16m1_t vc = vzero_u16m1();
+  volatile vuint16m1_t vc = vzero_u16m1();
   vc = vredsum_vs_u16m1_u16m1(vc,va,vb);
   uint16x4_t c;
   vse16_v_u16m1(&c[0],vc);
@@ -8111,7 +8149,7 @@ vaddv_u32 (uint32x2_t __a)
   vsetvl_e32m1 (number);
   vuint32m1_t va = vle32_v_u32m1(&__a[0]);
   vuint32m1_t vb = vzero_u32m1();
-  vuint32m1_t vc = vzero_u32m1();
+  volatile vuint32m1_t vc = vzero_u32m1();
   vc = vredsum_vs_u32m1_u32m1(vc,va,vb);
   uint32x2_t c;
   vse32_v_u32m1(&c[0],vc);
@@ -8125,7 +8163,7 @@ vaddv_f32 (float32x2_t __a)
   vsetvl_e32m1 (number);
   vfloat32m1_t va = vle32_v_f32m1(&__a[0]);
   vfloat32m1_t vb = vzero_f32m1();
-  vfloat32m1_t vc = vzero_f32m1();
+  volatile vfloat32m1_t vc = vzero_f32m1();
   vc = vfredsum_vs_f32m1_f32m1(vc,va,vb);
   float32x2_t c;
   vse32_v_f32m1(&c[0],vc);
@@ -8139,7 +8177,7 @@ vaddvq_s8 (int8x16_t __a)
   vsetvl_e8m1 (number);
   vint8m1_t va = vle8_v_i8m1(&__a[0]);
   vint8m1_t vb = vzero_i8m1();
-  vint8m1_t vc = vzero_i8m1();
+  volatile vint8m1_t vc = vzero_i8m1();
   vc = vredsum_vs_i8m1_i8m1(vc,va,vb);
   int8x16_t c;
   vse8_v_i8m1(&c[0],vc);
@@ -8153,7 +8191,7 @@ vaddvq_s16 (int16x8_t __a)
   vsetvl_e16m1 (number);
   vint16m1_t va = vle16_v_i16m1(&__a[0]);
   vint16m1_t vb = vzero_i16m1();
-  vint16m1_t vc = vzero_i16m1();
+  volatile vint16m1_t vc = vzero_i16m1();
   vc = vredsum_vs_i16m1_i16m1(vc,va,vb);
   int16x8_t c;
   vse16_v_i16m1(&c[0],vc);
@@ -8167,7 +8205,7 @@ vaddvq_s32 (int32x4_t __a)
   vsetvl_e32m1 (number);
   vint32m1_t va = vle32_v_i32m1(&__a[0]);
   vint32m1_t vb = vzero_i32m1();
-  vint32m1_t vc = vzero_i32m1();
+  volatile vint32m1_t vc = vzero_i32m1();
   vc = vredsum_vs_i32m1_i32m1(vc,va,vb);
   int32x4_t c;
   vse32_v_i32m1(&c[0],vc);
@@ -8181,7 +8219,7 @@ vaddvq_s64 (int64x2_t __a)
   vsetvl_e64m1 (number);
   vint64m1_t va = vle64_v_i64m1(&__a[0]);
   vint64m1_t vb = vzero_i64m1();
-  vint64m1_t vc = vzero_i64m1();
+  volatile vint64m1_t vc = vzero_i64m1();
   vc = vredsum_vs_i64m1_i64m1(vc,va,vb);
   int64x2_t c;
   vse64_v_i64m1(&c[0],vc);
@@ -8195,7 +8233,7 @@ vaddvq_u8 (uint8x16_t __a)
   vsetvl_e8m1 (number);
   vuint8m1_t va = vle8_v_u8m1(&__a[0]);
   vuint8m1_t vb = vzero_u8m1();
-  vuint8m1_t vc = vzero_u8m1();
+  volatile vuint8m1_t vc = vzero_u8m1();
   vc = vredsum_vs_u8m1_u8m1(vc,va,vb);
   uint8x16_t c;
   vse8_v_u8m1(&c[0],vc);
@@ -8209,7 +8247,7 @@ vaddvq_u16 (uint16x8_t __a)
   vsetvl_e16m1 (number);
   vuint16m1_t va = vle16_v_u16m1(&__a[0]);
   vuint16m1_t vb = vzero_u16m1();
-  vuint16m1_t vc = vzero_u16m1();
+  volatile vuint16m1_t vc = vzero_u16m1();
   vc = vredsum_vs_u16m1_u16m1(vc,va,vb);
   uint16x8_t c;
   vse16_v_u16m1(&c[0],vc);
@@ -8223,7 +8261,7 @@ vaddvq_u32 (uint32x4_t __a)
   vsetvl_e32m1 (number);
   vuint32m1_t va = vle32_v_u32m1(&__a[0]);
   vuint32m1_t vb = vzero_u32m1();
-  vuint32m1_t vc = vzero_u32m1();
+  volatile vuint32m1_t vc = vzero_u32m1();
   vc = vredsum_vs_u32m1_u32m1(vc,va,vb);
   uint32x4_t c;
   vse32_v_u32m1(&c[0],vc);
@@ -8237,7 +8275,7 @@ vaddvq_u64 (uint64x2_t __a)
   vsetvl_e64m1 (number);
   vuint64m1_t va = vle64_v_u64m1(&__a[0]);
   vuint64m1_t vb = vzero_u64m1();
-  vuint64m1_t vc = vzero_u64m1();
+  volatile vuint64m1_t vc = vzero_u64m1();
   vc = vredsum_vs_u64m1_u64m1(vc,va,vb);
   uint64x2_t c;
   vse64_v_u64m1(&c[0],vc);
@@ -8251,7 +8289,7 @@ vaddvq_f32 (float32x4_t __a)
   vsetvl_e32m1 (number);
   vfloat32m1_t va = vle32_v_f32m1(&__a[0]);
   vfloat32m1_t vb = vzero_f32m1();
-  vfloat32m1_t vc = vzero_f32m1();
+  volatile vfloat32m1_t vc = vzero_f32m1();
   vc = vfredsum_vs_f32m1_f32m1(vc,va,vb);
   float32x4_t c;
   vse32_v_f32m1(&c[0],vc);
@@ -8296,7 +8334,7 @@ vrecpsq_f32 (float32x4_t __a, float32x4_t __b)
   vsetvl_e32m1 (number);
   vfloat32m1_t va = vle32_v_f32m1(&__a[0]);
   vfloat32m1_t vb = vle32_v_f32m1(&__b[0]);
-  vfloat32m1_t vc = vfmul_vv_f32m1(va,vb);
+  volatile vfloat32m1_t vc = vfmul_vv_f32m1(va,vb);
   vc = vfrsub_vf_f32m1(vc,2);
   float32x4_t c;
   vse32_v_f32m1(&c[0],vc);
@@ -8335,7 +8373,7 @@ vrsqrts_f32 (float32x2_t __a, float32x2_t __b)
 {
   int number = 2;
   vsetvl_e32m1 (number);
-  vfloat32m1_t va,vb,vc;
+  volatile vfloat32m1_t va,vb,vc;
   float32x2_t c;
   va = vle32_v_f32m1(&__a[0]);
   vb = vle32_v_f32m1(&__b[0]);
@@ -8353,7 +8391,7 @@ vrsqrtsq_f32 (float32x4_t __a, float32x4_t __b)
   vsetvl_e32m1 (number);
   vfloat32m1_t va = vle32_v_f32m1(&__a[0]);
   vfloat32m1_t vb = vle32_v_f32m1(&__b[0]);
-  vfloat32m1_t vc = vfmul_vv_f32m1(va,vb);
+  volatile vfloat32m1_t vc = vfmul_vv_f32m1(va,vb);
   vc = vfrsub_vf_f32m1(vc,3);
   vc = vfdiv_vf_f32m1(vc,2);
   float32x4_t c;
@@ -8383,8 +8421,7 @@ vrsqrteq_f32 (float32x4_t __a)
   vsetvl_e32m1 (number);
   vfloat32m1_t va = vle32_v_f32m1(&__a[0]);
   vfloat32m1_t c = vfsqrt_v_f32m1(va);
-  vfloat32m1_t d = vfmv_v_f_f32m1(1);
-  vfloat32m1_t ve = vfdiv_vv_f32m1(d,c);
+  vfloat32m1_t ve = vfrdiv_vf_f32m1(c,1);
   float32x4_t e;
   vse32_v_f32m1(&e[0],ve);
   return e;
@@ -8424,7 +8461,7 @@ vrhaddq_u8 (uint8x16_t __a, uint8x16_t __b)
   vsetvl_e8m1 (number);
   vuint8m1_t va = vle8_v_u8m1(&__a[0]);
   vuint8m1_t vb = vle8_v_u8m1(&__b[0]);
-  vuint8m1_t vc = vnsrl_wx_u8m1(vadd_vx_u16m2(vwaddu_vv_u16m2(va,vb),1),1);
+  vuint8m1_t vc = vnclipu_wx_u8m1(vadd_vx_u16m2(vwaddu_vv_u16m2(va,vb),1),1);
   uint8x16_t c;
   vse8_v_u8m1(&c[0],vc);
   return c;
@@ -8646,7 +8683,7 @@ vpadal_u32 (uint64x1_t __a, uint32x2_t __b)
   vsetvl_e32m1 (number*2);
   vuint64m1_t va = vle64_v_u64m1(&__a[0]);
   vuint32m1_t vb = vle32_v_u32m1(&__b[0]);
-  vuint64m1_t vc = vzero_u64m1();
+  volatile vuint64m1_t vc = vzero_u64m1();
   vc = vwredsumu_vs_u32m1_u64m1(vc,vb,va);
   vsetvl_e64m1 (number);
   uint64x1_t c;

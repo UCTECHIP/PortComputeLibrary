@@ -1641,7 +1641,7 @@ void NEPoolingLayerKernel::pooling3_f32_nchw(const Window &window_input, const W
         if(pooling_type != PoolingType::MAX)
         {
             // Calculate scale
-            float             scale   = calculate_avg_scale(exclude_padding, DataLayout::NCHW, id, pool_size, pool_size, upper_bound_w, upper_bound_h, pool_pad_left, pool_pad_top, pool_stride_x, pool_stride_y);
+            volatile float             scale   = calculate_avg_scale(exclude_padding, DataLayout::NCHW, id, pool_size, pool_size, upper_bound_w, upper_bound_h, pool_pad_left, pool_pad_top, pool_stride_x, pool_stride_y);
             const float32x2_t scale_v = vdup_n_f32(scale);
 
             // Perform pooling

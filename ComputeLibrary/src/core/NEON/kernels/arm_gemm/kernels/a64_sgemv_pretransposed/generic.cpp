@@ -42,19 +42,18 @@ void a64_sgemv_pretransposed(const float *A, int lda, const float *X, float *Y, 
         // How many elements are we processing in this loop?
         int l = std::min(N - x, 32);
 
+		volatile float32x4_t r0;
+		volatile float32x4_t r1;
+		volatile float32x4_t r2;
+		volatile float32x4_t r3;
+		volatile float32x4_t r4;
+		volatile float32x4_t r5;
+		volatile float32x4_t r6;
+		volatile float32x4_t r7;
 
+		volatile float32x4_t x0;
+		volatile float32x4_t x0a;
 
-		float32x4_t r0;
-		float32x4_t r1;
-		float32x4_t r2;
-		float32x4_t r3;
-		float32x4_t r4;
-		float32x4_t r5;
-		float32x4_t r6;
-		float32x4_t r7;
-
-		float32x4_t x0;
-		float32x4_t x0a;
         float s[4] = {0,0,0,0};
         float *s0 = s;
         float *s1 = s0 + 1;

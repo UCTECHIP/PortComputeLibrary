@@ -80,7 +80,7 @@ void requantize_block_32_int(const Requantize32 &qp, unsigned int width, unsigne
         const int32_t *perch_shift_ptr = qp.per_channel_shifts;
 
         const int32_t *in_ptr = input + (row * in_stride);
-        int8_t *out_ptr = output + (row * out_stride);
+        int8_t *out_ptr = output + (row * out_stride); // @yexc: misaligned load/store, out_stride = 5
         int32_t row_sum = row_bias[row];
 
         const int32_t *in_ptr1;
@@ -346,9 +346,9 @@ void requantize_block_32_int(const Requantize32 &qp, unsigned int width, unsigne
 
             int8x16_t v_uz0 = vuzp1q_s8(vreinterpretq_s8_s16(v_uz00), vreinterpretq_s8_s16(v_uz00));
 
-            vst1q_lane_s32(reinterpret_cast<int32_t *>(out_ptr), vreinterpretq_s32_s8(v_uz0), 0);
-            out_ptr += 4;
-            vst1q_lane_s32(reinterpret_cast<int32_t *>(out_ptr1), vreinterpretq_s32_s8(v_uz0), 1);
+            vst1q_lane_s32(reinterpret_cast<int32_t *>(out_ptr), vreinterpretq_s32_s8(v_uz0), 0); // @yexc: misaligned
+            out_ptr += 4; 
+            vst1q_lane_s32(reinterpret_cast<int32_t *>(out_ptr1), vreinterpretq_s32_s8(v_uz0), 1); // @yexc: misaligned
             out_ptr1 += 4;
         }
 

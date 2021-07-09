@@ -116,7 +116,7 @@ void TransformImpl<4, 16, false, 1, 1, false>::Transform(T *out, const T *in, in
             		: [inptr0] "+r" (inptr0), [inptr1] "+r" (inptr1), [inptr2] "+r" (inptr2), [inptr3] "+r" (inptr3),
 					  [outptr] "+r" (outptr)
 					  :
-					  : "v0", "v1"
+					  : "v0", "v1", "a0", "t0"
             );
         }
 

@@ -45,15 +45,15 @@ void a64_gemm_s8_4x4(const int8_t *Apanel, const int8_t *Bpanel, int32_t *Cpanel
 
             int k = ((K+1)/2)-1;
 
-
-unsigned int s0[4] = {0xffffffff,0xffffffff,0,0};
-unsigned int *sa = s0;
-unsigned int s1[4] = {0,0,0xffffffff,0xffffffff};
-unsigned int *sb = s1;
-int q0[4] = {0,2,1,3};
-int *q = q0;
-short p0[8] = {0,2,4,6,1,3,5,7};
-short *p = p0;
+/*riscv*/
+volatile unsigned int s0[4] = {0xffffffff,0xffffffff,0,0};
+volatile unsigned int *sa = s0;
+volatile unsigned int s1[4] = {0,0,0xffffffff,0xffffffff};
+volatile unsigned int *sb = s1;
+volatile int q0[4] = {0,2,1,3};
+volatile int *q = q0;
+volatile short p0[8] = {0,2,4,6,1,3,5,7};
+volatile short *p = p0;
 
 	__asm__ __volatile__(
 	"li  a0, 16\n"

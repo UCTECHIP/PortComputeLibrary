@@ -266,7 +266,8 @@ void fuse_layer(Graph &g, std::function<bool(INode &)> const &prec, const F fuse
     for(auto &node : g.nodes())
     {
         // Check if the node is of type N and not a branching node
-        if(node && node->type() == N1::node_type && node->output_edges().size() == 1)
+        //if(node && node->type() == N1::node_type && node->output_edges().size() == 1)
+        if(node && node->output_edges().size() == 1 && node->type() == N1::node_type)
         {
             const auto output_edge_id = *node->output_edges().begin();
             const auto output_edge    = g.edge(output_edge_id);

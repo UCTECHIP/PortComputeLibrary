@@ -83,7 +83,7 @@ inline void TransposeInterleaveCommon<24, uint16_t, uint16_t>::moveblock_1x1(con
 		"vle16.v  v2, (%[in0])\n"
 		"add  %[in0], %[in0], 16\n"
 		"add  a1, %[out], 32\n"
-		"vse16.v  v0, (a1)\n"
+		"vse16.v  v2, (a1)\n"
 		: [in0] "+r" (in0), [out] "+r" (out)
 		:
 		: "v0", "v1", "v2", "t0", "a0", "a1", "a2"
